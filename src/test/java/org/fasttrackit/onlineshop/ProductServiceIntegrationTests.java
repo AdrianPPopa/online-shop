@@ -1,6 +1,7 @@
 package org.fasttrackit.onlineshop;
 
 import org.fasttrackit.onlineshop.domain.Product;
+import org.fasttrackit.onlineshop.exeption.ResourceNotFoundException;
 import org.fasttrackit.onlineshop.service.ProductService;
 import org.fasttrackit.onlineshop.transfer.product.SaveProductRequest;
 import org.junit.Test;
@@ -24,6 +25,35 @@ public class ProductServiceIntegrationTests {
 
     @Test
     public void testCreateProduct_whenValidRequest_thanReturnCreatedProduct() {
+        createProduct();
+    }
+
+
+    @Test(expected = TransactionSystemException.class)
+    public void testCreateProduct_whenInvalidRequest_thanThrowException(){
+        SaveProductRequest request = new SaveProductRequest();
+
+        //not setting any values on the request, because we want to send an invalid request
+        Product product = productService.createProduct(request);
+    }
+
+    @Test
+    public void testGetProduct_whenExistingEntity_thanReturnProduct (){
+        Product createdProduct = createProduct();
+
+        Product retrievedProduct = productService.getProduct(createdProduct.getId());
+        assertThat(retrievedProduct,notNullValue());
+        assertThat(retrievedProduct.getId(),is(createdProduct.getId()));
+        assertThat(retrievedProduct.getName(),is(retrievedProduct.getName()));
+
+    }
+
+    @Test (expected = ResourceNotFoundException.class)
+    public void testGetProduct_whenNonExistingEntity_thanThrowNotFoundException (){
+        productService.getProduct(99999);
+    }
+
+    private Product createProduct() {
         SaveProductRequest request = new SaveProductRequest();
         request.setName("Computer");
         request.setDescription("Some description");
@@ -38,13 +68,6 @@ public class ProductServiceIntegrationTests {
         assertThat(product.getName(), is(request.getName()));
         assertThat(product.getPrice(), is(request.getPrice()));
         assertThat(product.getDescription(), is(request.getDescription()));
-    }
-
-    @Test(expected = TransactionSystemException.class)
-    public void testCreateProduct_whenInvalidRequest_thanThrowException(){
-        SaveProductRequest request = new SaveProductRequest();
-
-        //not setting any values on the request, because we want to send an invalid request
-        Product product = productService.createProduct(request);
+        return product;
     }
 }
